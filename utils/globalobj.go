@@ -34,7 +34,7 @@ func (g *GlobalObj) Reload() {
 func init() {
 	GlobalObject = &GlobalObj{
 		Name:           "ZinxServerAPP",
-		Version:        "V0.4",
+		Version:        "V0.6",
 		TCPPort:        8999,
 		Host:           "0.0.0.0",
 		MaxConn:        1000,
