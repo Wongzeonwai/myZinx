@@ -13,8 +13,8 @@ type IConnection interface {
 	GetID() uint32
 	// 获取远程客户端的TCP状态，IP和Port
 	GetRemoteAddr() net.Addr
-	// 发送数据，将数据发送给远程客户端
-	Send(data []byte) error
+	// 封包，发送数据，将数据发送给远程客户端
+	Send(msgID uint32, data []byte) error
 }
 
 // 定义一个处理连接业务的方法

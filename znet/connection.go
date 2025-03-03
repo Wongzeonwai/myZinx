@@ -1,9 +1,10 @@
 package znet
 
 import (
+	"errors"
 	"fmt"
-	"go-zinx/utils"
 	"go-zinx/ziface"
+	"io"
 	"net"
 )
 
@@ -36,17 +37,39 @@ func (c *Connection) StartReader() {
 
 	for {
 		// 读取客户端的数据到buf中
-		buf := make([]byte, utils.GlobalObject.MaxPackageSize)
-		_, err := c.Conn.Read(buf)
-		if err != nil {
-			fmt.Println("read err:", err)
-			continue
+		//buf := make([]byte, utils.GlobalObject.MaxPackageSize)
+		//_, err := c.Conn.Read(buf)
+		//if err != nil {
+		//	fmt.Println("read err:", err)
+		//	continue
+		//}
+		// 创建一个拆包对象
+		dp := NewDataPack()
+		headData := make([]byte, dp.GetHeadLen())
+		if _, err := io.ReadFull(c.GetTCPConnection(), headData); err != nil {
+			fmt.Println("read head data error:", err)
+			break
 		}
 
+		msgData, err := dp.Unpack(headData)
+		if err != nil {
+			fmt.Println("unpack data error:", err)
+			break
+		}
+
+		var data []byte
+		if msgData.GetMsgLen() > 0 {
+			data = make([]byte, msgData.GetMsgLen())
+			if _, err := io.ReadFull(c.GetTCPConnection(), data); err != nil {
+				fmt.Println("read msg data error:", err)
+				break
+			}
+		}
+		msgData.SetData(data)
 		// 得到当前conn数据的Request请求数据
 		req := &Request{
 			conn: c,
-			data: buf,
+			msg:  msgData,
 		}
 
 		// 从路由中，找到注册绑定的Conn对应的router调用
@@ -86,6 +109,19 @@ func (c *Connection) GetRemoteAddr() net.Addr {
 	return c.Conn.RemoteAddr()
 }
 
-func (c *Connection) Send(data []byte) error {
+func (c *Connection) Send(msgID uint32, data []byte) error {
+	if c.IsClosed {
+		return errors.New("connection is closed")
+	}
+	// 封包 msglen/msgid/msgdata
+	dp := NewDataPack()
+	msg := NewMessage(msgID, data)
+	binaryMsg, err := dp.Pack(msg)
+	if err != nil {
+		return err
+	}
+	if _, err := c.Conn.Write(binaryMsg); err != nil {
+		return err
+	}
 	return nil
 }
