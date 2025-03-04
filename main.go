@@ -34,9 +34,23 @@ func (this *HelloRouter) Handle(request ziface.IRequest) {
 	}
 }
 
+func DoconnectionBegin(conn ziface.IConnection) {
+	fmt.Println("<============ DoconnectionBegin begin ==============>")
+	if err := conn.Send(202, []byte("hello zinx")); err != nil {
+		fmt.Println("send ping err:", err)
+	}
+}
+
+func DoconnectionEnd(conn ziface.IConnection) {
+	fmt.Println("============ DoconnectionEnd end ==============>")
+	fmt.Println("conn id=", conn.GetID(), "is logout")
+}
+
 func main() {
-	s := znet.NewServer("[ZINXV0.5]")
+	s := znet.NewServer("[ZINXV0.9]")
 	s.AddRouter(0, &PingRouter{})
 	s.AddRouter(1, &HelloRouter{})
+	s.SetOnConnStart(DoconnectionBegin)
+	s.SetOnConnStop(DoconnectionEnd)
 	s.Serve()
 }

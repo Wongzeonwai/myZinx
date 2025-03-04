@@ -10,4 +10,9 @@ type IServer interface {
 	Serve()
 	// 路由功能，给当前服务注册一个路由方法，供客户端连接使用
 	AddRouter(msgID uint32, router IRouter)
+	GetConnManager() IConnManager
+	SetOnConnStart(func(conn IConnection))
+	SetOnConnStop(func(conn IConnection))
+	CallOnConnStart(conn IConnection)
+	CallOnConnStop(conn IConnection)
 }
